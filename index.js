@@ -6,7 +6,9 @@
  */
 export function struct(reducerMap) {
   const state = {};
-  Object.keys(reducerMap).forEach(key => state[key] = reducerMap[key](undefined, {}));
+  Object.keys(reducerMap).forEach(key => {
+    state[key] = reducerMap[key](undefined, { type: '' });
+  });
   return state;
 }
 
