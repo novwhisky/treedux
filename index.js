@@ -51,7 +51,7 @@ export function reduceChild(state, action, reducer = _=>_) {
   const ctx = getContext(key, state);
   const slice = reducer(ctx, { type: path });
   if(!!ctx)
-    return { [key]: slice };
+    return slice;
 }
 
 /**
@@ -61,11 +61,14 @@ export function reduceChild(state, action, reducer = _=>_) {
  */
 export function createReducerTree(children, ownReducer) {
   return (state=struct(children), action) => {
-    const ownState = ownReducer(state, action);
+    const mergeObjects = [{}, state];
     const [reducerKey,] = shiftKeyPath(action.type);
     const slice = reduceChild(state, action, children[reducerKey]);
+    if(!!slice)
+      mergeObjects.push({ [reducerKey]: slice });
 
-    // Shallow merge. Because of precedence, this should be improved to prevent slice clobbering the parent state.
-    return Object.assign({}, ownState, slice);
+    const newState = Object.assign(...mergeObjects);
+
+    return ownReducer(newState, action);
   }
 }
