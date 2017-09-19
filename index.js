@@ -7,7 +7,7 @@
 export function struct(reducerMap) {
   const state = {};
   Object.keys(reducerMap).forEach(key => {
-    state[key] = reducerMap[key](undefined, { type: '' });
+    state[key] = reducerMap[key](undefined, { type: '' }) || {};
   });
   return state;
 }
@@ -46,12 +46,15 @@ export function shiftKeyPath(keyPath) {
  * @param {Function<state, action>} reducer
  * @returns {Object|undefined}
  */
-export function reduceChild(state, action, reducer = _=>_) {
+export function reduceChildren(state, action, reducer = _=>_) {
   const [key, path] = shiftKeyPath(action.type);
   const ctx = getContext(key, state);
   const slice = reducer(ctx, { type: path });
-  if(!!ctx)
-    return slice;
+  if(!!ctx) {
+    state[key] = slice;
+  }
+
+  return state;
 }
 
 /**
@@ -61,14 +64,16 @@ export function reduceChild(state, action, reducer = _=>_) {
  */
 export function createReducerTree(children, ownReducer) {
   return (state=struct(children), action) => {
-    const mergeObjects = [{}, state];
+    const mergeObjects = [];
     const [reducerKey,] = shiftKeyPath(action.type);
-    const slice = reduceChild(state, action, children[reducerKey]);
-    if(!!slice)
-      mergeObjects.push({ [reducerKey]: slice });
+    const childState = reduceChildren(state, action, children[reducerKey]);
+    const ownState = ownReducer(state, action);
 
-    const newState = Object.assign(...mergeObjects);
+    if(childState) {
+      mergeObjects.push(childState);
+    }
 
-    return ownReducer(newState, action);
+    mergeObjects.push(ownState);
+    return Object.assign({}, ...mergeObjects);
   }
 }
