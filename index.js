@@ -49,7 +49,8 @@ export function shiftKeyPath(keyPath) {
 export function reduceChildren(state, action, reducer = _=>_) {
   const [key, path] = shiftKeyPath(action.type);
   const ctx = getContext(key, state);
-  const slice = reducer(ctx, { type: path });
+  const ctxAction = Object.assign({}, action, { type: path });
+  const slice = reducer(ctx, ctxAction);
   if(!!ctx) {
     state[key] = slice;
   }
