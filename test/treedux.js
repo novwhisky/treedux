@@ -3,7 +3,7 @@
 import { expect } from 'chai';
 
 import { createStore } from 'redux';
-import { createReducerTree, struct } from '../index';
+import { createReducerTree, struct } from '../src/index';
 
 describe('treedux', function() {
   let initialReducer = (state, action) => state;

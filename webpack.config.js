@@ -2,7 +2,7 @@ var UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
   devtool: 'source-map',
-  entry: './index.js',
+  entry: './src/index.js',
   output: {
     filename: 'treedux.js',
     library: 'treedux',
