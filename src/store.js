@@ -1,4 +1,4 @@
-import { createStore } from 'redux';
+import { createStore, compose } from 'redux';
 import { createReducerTree } from './reducer';
 
 
@@ -10,17 +10,18 @@ function mount(store, keyPath, reducer) {
 }
 
 export function configureStore(initialState) {
+  // For devtools debug, because this is very much in development
+  const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
   const store = createStore(
     init,
-
-    //initialState,
-
-    // For devtools debug, because this is very much in development
-    window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
-
+    initialState,
+    composeEnhancers(
+      /* applyMiddleware(...middleware) */
+    )
   );
 
   store.reducerMap = {};
-  store.mount = mount.bind(store, store);
+  store.mount = mount.bind(null, store);
   return store;
 }
