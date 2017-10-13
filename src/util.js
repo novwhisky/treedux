@@ -38,3 +38,76 @@ export function shiftKeyPath(keyPath) {
   const [key, ...path] = keyPath.split('.');
   return [key, path.join('.')];
 }
+
+/**
+ * @param {String} keyPath
+ * @param {Object} state
+ * @param {*} targetValue
+ * @returns {Object}
+ */
+// scaffold(keyPath, mergeFn)
+export function scaffold(keyPath, targetValue={}) {
+  const stateCopy = {};
+  const [key, path] = shiftKeyPath(keyPath);
+  // const ctx = stateCopy[key];
+
+  if(path.length > 0) {
+    stateCopy[key] = scaffold(path, targetValue);
+  }
+  else {
+    stateCopy[key] = targetValue;
+  }
+
+  return stateCopy;
+}
+
+
+export function isObject(item) {
+  return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
+/**
+ * @param {Object} target
+ * @param {Object} source
+ * @returns {*}
+ */
+export function mergeDeep(target, source) {
+  let output = Object.assign({}, target);
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!(key in target))
+          Object.assign(output, { [key]: source[key] });
+        else
+          output[key] = mergeDeep(target[key], source[key]);
+      } else {
+        Object.assign(output, { [key]: source[key] });
+      }
+    });
+  }
+  return output;
+}
+
+
+
+
+export function selectorFromKeyPath(keyPath) {
+  if(Array.isArray(keyPath)) {
+    const [key, ...path] = keyPath;
+    const selector = state => state[key];
+
+    if(path && path.length > 0) {
+      return state => selectorFromKeyPath(path)(selector(state));
+    }
+    else if(key && key.length > 0) {
+      return selector;
+    }
+    else {
+      return _=> {};
+    }
+  }
+  else {
+    // console.log(keyPath);
+    return selectorFromKeyPath(keyPath.split('.'));
+  }
+}
