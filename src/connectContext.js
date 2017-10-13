@@ -13,7 +13,7 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
 
   return function wrapComponent(ReactComponent) {
     // yolo
-    const Connect = connect()(ReactComponent);
+    // const Connect = connect()(ReactComponent);
 
     function makeSelectorStateful(sourceSelector, store, sliceSelector) {
       // wrap the selector in an object that tracks its results between runs.
@@ -42,13 +42,18 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
       let result = {};
 
       return function sourceSelector(/*ctx, */nextState, nextOwnProps) {
-        // console.log(ctx);
-        const nextResult = { ...nextOwnProps }; //, ...mapSliceToProps(ctx)
+
+        const nextSlice = sliceSelector(nextState) || {};
+        const nextCtx = mapSliceToProps(nextSlice);
+
+        const nextResult = { ...nextOwnProps, ...nextCtx };
         ownProps = nextOwnProps;
         result = nextResult;
         return result;
       };
     }
+
+    const Connect = connectAdvanced(selectorFactory)(ReactComponent);
 
     class Context extends Connect {
       constructor(props, context) {
@@ -60,10 +65,27 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
         // this.selector.run(props);
 
 
-        this.mountAndReplaceReducer();
+        this.mountReducer();
       }
 
-      mountAndReplaceReducer() {
+      getChildContext() {
+        const { store, storeSubscription, keyPath: parentKeyPath } = this.context;
+
+        // const keyPath = `${}`
+
+        let namespace = '';
+        if(parentKeyPath) {
+          namespace = `${parentKeyPath}.`;
+        }
+
+        return {
+          store,
+          storeSubscription,
+          keyPath: namespace + keyPath
+        }
+      }
+
+      mountReducer() {
         // Recursion trap
         /*if(true || this.store.reducerLib.getReducer(keyPath) !== reducer) {*/
           this.store.mount(keyPath, reducer);
