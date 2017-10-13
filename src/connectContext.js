@@ -2,6 +2,7 @@ import { connect, connectAdvanced } from 'react-redux';
 import { object, string, func } from 'prop-types';
 
 import { selectorFromKeyPath } from './util';
+import shallowEqual from './utils/shallowEqual';
 
 function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDispatchToProps) {
   const [keyPath, reducer] = contextFactoryArgs;
@@ -41,19 +42,38 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
       let ownProps = {};
       let result = {};
 
-      return function sourceSelector(/*ctx, */nextState, nextOwnProps) {
+      // sourceSelector
+      return (nextState, nextOwnProps) => {
+        // console.log('nextState', nextState);
+        const nextSlice = options.sliceSelector(nextState);
+        // console.log('nextSlice', nextSlice);
 
-        const nextSlice = sliceSelector(nextState) || {};
-        const nextCtx = mapSliceToProps(nextSlice);
+        // console.log(keyPath, options.sliceSelector);
+
+        let nextCtx = {};
+        if(nextSlice) {
+          nextCtx = mapSliceToProps(nextSlice);
+          // console.log('nextCtx', nextCtx);
+        }
+
 
         const nextResult = { ...nextOwnProps, ...nextCtx };
         ownProps = nextOwnProps;
-        result = nextResult;
+        if (!shallowEqual(result, nextResult)) {
+          result = nextResult;
+          // console.log('nextResult', nextResult);
+        }
         return result;
       };
     }
 
-    const Connect = connectAdvanced(selectorFactory)(ReactComponent);
+    const options = {
+      getDisplayName: name => 'Context(' + name + ')',
+      sliceSelector,
+      keyPath
+    };
+
+    const Connect = connectAdvanced(selectorFactory, options)(ReactComponent);
 
     class Context extends Connect {
       constructor(props, context) {
@@ -68,27 +88,34 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
         this.mountReducer();
       }
 
-      getChildContext() {
-        const { store, storeSubscription, keyPath: parentKeyPath } = this.context;
-
-        // const keyPath = `${}`
-
-        let namespace = '';
+      getNamespace() {
+        let parentNamespace = '';
+        const { keyPath: parentKeyPath } = this.context;
         if(parentKeyPath) {
-          namespace = `${parentKeyPath}.`;
+          parentNamespace = `${parentKeyPath}.`;
         }
+        return parentNamespace + keyPath
+      }
+
+      getChildContext() {
+        const { store, storeSubscription } = this.context;
 
         return {
           store,
           storeSubscription,
-          keyPath: namespace + keyPath
+          keyPath: this.getNamespace()
         }
       }
 
       mountReducer() {
+        const namespace = this.getNamespace();
+
         // Recursion trap
         /*if(true || this.store.reducerLib.getReducer(keyPath) !== reducer) {*/
-          this.store.mount(keyPath, reducer);
+          if(namespace) {
+            this.store.mount(namespace, reducer);
+          }
+          // this.store.mount(keyPath, reducer);
         /*}*/
 
 
@@ -99,7 +126,6 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
       }
     }
 
-    Context.displayName = 'Context(' + ReactComponent.name + ')';
 
     Context.childContextTypes = Context.contextTypes = {
       keyPath: string,
