@@ -2,7 +2,8 @@
 
 import { expect } from 'chai';
 
-import { createStore } from 'redux';
+import { configureStore } from '../src/store';
+
 import { createReducerTree, struct } from '../src/index';
 
 describe('treedux', function() {
@@ -15,7 +16,7 @@ describe('treedux', function() {
   }
 
   beforeEach(function() {
-    store = createStore(initialReducer);
+    store = configureStore({});
   });
 
   describe('#createReducerTree()', function() {
@@ -65,10 +66,10 @@ describe('treedux', function() {
         replaceAndDispatch(rootReducer);
 
         expect(store.getState()).to.deep.equal({
-          leafA: {},
-          leafB: {},
-          leafC: {},
-          leafD: {},
+          leafA: undefined,
+          leafB: undefined,
+          leafC: undefined,
+          leafD: undefined,
           rootReduced: true
         })
       });
@@ -87,7 +88,7 @@ describe('treedux', function() {
         replaceAndDispatch(rootReducer);
 
         expect(store.getState()).to.deep.equal({
-          leafWithoutInitialState: {},
+          leafWithoutInitialState: undefined,
           leafWithInitialState: { hasInitial: true },
           rootReduced: true
         })
@@ -98,7 +99,7 @@ describe('treedux', function() {
       let leafReducer, rootReducer;
 
       beforeEach(function() {
-        leafReducer = (state, action) => {
+        leafReducer = (state=({}), action) => {
           switch(action.type) {
             case 'LOCAL_ACTION':
               state.reducedLocalState = true;
@@ -117,7 +118,9 @@ describe('treedux', function() {
 
         const keyPath = 'leafReducer.LOCAL_ACTION';
 
-        expect(store.getState()).to.deep.equal({ leafReducer: {} });
+        expect(store.getState()).to.deep.equal({
+          leafReducer: {}
+        });
         store.dispatch({ type: keyPath });
         expect(store.getState()).to.deep.equal({
           leafReducer: {
@@ -142,7 +145,7 @@ describe('treedux', function() {
       });
 
       it('correctly merges ownState on top of childState', function() {
-        const grandchildReducer = (state, action) => {
+        const grandchildReducer = (state=({}), action) => {
           switch (action.type) {
             case 'LOCAL_ACTION':
               state.grandchildReduced = true;
@@ -199,7 +202,7 @@ describe('treedux', function() {
       const state = struct(reducerMap);
 
       expect(state).to.deep.equal({
-        foo: {},
+        foo: undefined,
         bar: { reduced: true }
       });
     });
@@ -215,7 +218,7 @@ describe('treedux', function() {
       const state = struct(reducerMap);
 
       expect(state).to.deep.equal({
-        foo: {},
+        foo: undefined,
         bar: {
           buzz: { recursed: true }
         }

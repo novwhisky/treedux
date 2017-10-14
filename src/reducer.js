@@ -1,22 +1,23 @@
-import { struct, shiftKeyPath, getContext } from './util';
+import { shiftKeyPath } from './util';
 
 /**
- * @param {Object} state
+ * Enumerates child context from parent
+ * @param {String} key
+ * @param {String} path
+ * @param {*} state
  * @param {Object} action
- * @param {String} action.type
- * @param {Function<state, action>} reducer
- * @returns {Object|undefined}
+ * @returns {[ctx, action]}
  */
-export function reduceChildren(state, action, reducer = _=>_) {
-  const [key, path] = shiftKeyPath(action.type);
-  const ctx = getContext(key, state);
-  const ctxAction = Object.assign({}, action, { type: path });
-  const slice = reducer(ctx, ctxAction);
-  if(!!ctx) {
-    state[key] = slice;
+function deriveChildContext(key, path, state, action) {
+  let ctx;
+  const ctxAction = { ...action, type: path };
+  // console.log(ctxAction);
+
+  if(state && key in state) {
+    ctx = state[key];
   }
 
-  return state;
+  return [ctx, ctxAction];
 }
 
 /**
@@ -25,17 +26,28 @@ export function reduceChildren(state, action, reducer = _=>_) {
  * @returns {function(*=, *=)}
  */
 export function createReducerTree(children, ownReducer) {
-  return (state=struct(children), action) => {
-    const mergeObjects = [];
-    const [reducerKey,] = shiftKeyPath(action.type);
-    const childState = reduceChildren(state, action, children[reducerKey]);
+  // state=struct(children)
+
+  // Iiiiiiinteresting...
+  // So, as long as an action path is well formed we can parse that to traverse child reducers
+  // BUT, as seen with redux/@@INIT, other reducers are still called
+  // In some instances this would be opportune to differentiate between default state and legit targeted reducer calls
+
+  const finalReducer = (state, action) => {
+    const [reducerKey, path] = shiftKeyPath(action.type);
+
+    const childKeys = Object.keys(children);
+    const childState = {};
+    childKeys.forEach(key => {
+      const childReducer = children[key];
+      const [ctx, ctxAction] = deriveChildContext(key, path, state, action);
+      childState[key] = childReducer(ctx, ctxAction);
+    });
+
     const ownState = ownReducer(state, action);
 
-    if(childState) {
-      mergeObjects.push(childState);
-    }
+    return { ...childState, ...ownState };
+  };
 
-    mergeObjects.push(ownState);
-    return Object.assign({}, ...mergeObjects);
-  }
+  return finalReducer;
 }

@@ -10,7 +10,7 @@ let _children = new WeakMap();
 let _hasUpdate = new WeakMap();
 
 class ReducerLeaf {
-  constructor(key, reducer=(_=>({}))) { //_=>{}
+  constructor(key, reducer= _=>({}) ) {
     // if(!reducer) {
     //   throw new Error('Fail');
     // }
@@ -141,8 +141,10 @@ function mount(store, keyPath, reducer) {
 }
 
 export function configureStore(initialState) {
-  // For devtools debug, because this is very much in development
-  const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+  let composeEnhancers = function() {};
+  if(window) {
+    composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+  }
 
   const store = createStore(
     init,
@@ -152,7 +154,7 @@ export function configureStore(initialState) {
     )
   );
 
-  store.reducerLib = new ReducerLeaf(); // _=>_ //_=>({})
+  store.reducerLib = new ReducerLeaf();
   store.reducerMap = {};
   store.mount = mount.bind(store, store);
   return store;
