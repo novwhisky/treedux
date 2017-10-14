@@ -1,4 +1,4 @@
-import { connect, connectAdvanced } from 'react-redux';
+import { connectAdvanced } from 'react-redux';
 import { object, string, func } from 'prop-types';
 
 import { selectorFromKeyPath } from './util';
@@ -6,37 +6,9 @@ import shallowEqual from './utils/shallowEqual';
 
 function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDispatchToProps) {
   const [keyPath, reducer] = contextFactoryArgs;
-
-  // console.log(...arguments);
-
   const sliceSelector = selectorFromKeyPath(keyPath);
-  // const sliceSelector = _=>_;
 
   return function wrapComponent(ReactComponent) {
-    // yolo
-    // const Connect = connect()(ReactComponent);
-
-    function makeSelectorStateful(sourceSelector, store, sliceSelector) {
-      // wrap the selector in an object that tracks its results between runs.
-      const selector = {
-        run: function runComponentSelector(props) {
-          try {
-            const nextProps = sourceSelector(/*sliceSelector(*/store.getState()/*)*/, store.getState(), props)
-            // console.log(nextProps);
-            if (nextProps !== selector.props || selector.error) {
-              selector.shouldComponentUpdate = true
-              selector.props = nextProps
-              selector.error = null
-            }
-          } catch (error) {
-            selector.shouldComponentUpdate = true
-            selector.error = error
-          }
-        }
-      }
-
-      return selector
-    }
 
     function selectorFactory(dispatch, options) {
       let ownProps = {};
@@ -46,7 +18,7 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
       return (nextState, nextOwnProps) => {
         // console.log('nextState', nextState);
         const nextSlice = options.sliceSelector(nextState);
-        // console.log('nextSlice', nextSlice);
+        console.log('nextSlice', nextSlice);
 
         // console.log(keyPath, options.sliceSelector);
 
@@ -61,7 +33,7 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
         ownProps = nextOwnProps;
         if (!shallowEqual(result, nextResult)) {
           result = nextResult;
-          // console.log('nextResult', nextResult);
+          console.log('nextResult', nextResult);
         }
         return result;
       };
@@ -78,12 +50,6 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
     class Context extends Connect {
       constructor(props, context) {
         super(props, context);
-
-        // const sliceSelector = context.sliceSelector || (_=>_);
-        // const sourceSelector = selectorFactory(this.store.dispatch, {});
-        // this.selector = makeSelectorStateful(sourceSelector, this.store /*, sliceSelector*/);
-        // this.selector.run(props);
-
 
         this.mountReducer();
       }
@@ -110,22 +76,11 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
       mountReducer() {
         const namespace = this.getNamespace();
 
-        // Recursion trap
-        /*if(true || this.store.reducerLib.getReducer(keyPath) !== reducer) {*/
-          if(namespace) {
-            this.store.mount(namespace, reducer);
-          }
-          // this.store.mount(keyPath, reducer);
-        /*}*/
-
-
-        // console.log(keyPath, reducer);
-        // this.store.mount(keyPath, reducer);
-        // Nah
-        // this.store.replaceReducer(this.store.reducerLib.makeReducerTree());
+        if(namespace) {
+          this.store.mount(namespace, reducer);
+        }
       }
     }
-
 
     Context.childContextTypes = Context.contextTypes = {
       keyPath: string,
@@ -135,7 +90,6 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
     };
 
     return Context;
-    // return Connect;
 
     /*
     function Context(props, context) {
@@ -180,39 +134,8 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
 
       const Connect = connect(mapStateToProps, mapDispatchToProps)(ReactComponent);
 
-      Connect.childContextTypes = Connect.contextTypes = {
-        keyPath: string,
-        store: object,
-        storeSubscription: object,
-        sliceSelector: func
-      };
-
-      Connect.prototype.getChildContext = function() {
-        return { ...context, sliceSelector: nextSliceSelector, keyPath: nextKeyPath };
-      };
-
-      // Connect.prototype.componentDidMount = function() {
-        if(reducer && nextKeyPath) {
-          if(typeof reducer === 'function') {
-            console.log('[MOUNT]', nextKeyPath, reducer);
-            // context.store.mount(nextKeyPath, reducer);
-            context.store.reducerLib.mount(nextKeyPath, reducer);
-          }
-          else {
-            console.error(`Invalid reducer argument in ${keyPath}, expected a Function`);
-          }
-        }
-      // };
-
-      return new Connect(props, context);
     }
 
-    Context.childContextTypes = Context.contextTypes = {
-      keyPath: string,
-      store: object,
-      storeSubscription: object,
-      sliceSelector: func
-    };
     */
 
     return Context;
@@ -242,7 +165,7 @@ export function connectToContext (mapSliceToProps, mapDispatchToProps) {
  * @param {Function} reducer
  * @returns {Function|undefined}
  */
-export function context (keyPath, reducer) { // keyPath, reducer
+export function context (keyPath, reducer) {
   // convert keyPath to dynamic sliceSelector
   if(!keyPath) {
     console.error('Missing required parameter for binding context(): {String} keyPath');
