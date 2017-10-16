@@ -1,3 +1,4 @@
+import React, { createElement } from 'react';
 import { connectAdvanced } from 'react-redux';
 import { object, string, func } from 'prop-types';
 
@@ -6,7 +7,6 @@ import shallowEqual from './utils/shallowEqual';
 
 function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDispatchToProps) {
   const [keyPath, reducer] = contextFactoryArgs;
-  const sliceSelector = selectorFromKeyPath(keyPath);
 
   return function wrapComponent(ReactComponent) {
 
@@ -16,16 +16,16 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
 
       // sourceSelector
       return (nextState, nextOwnProps) => {
+        // console.log(nextOwnProps);
         // console.log('nextState', nextState);
-        const nextSlice = options.sliceSelector(nextState);
-        console.log('nextSlice', nextSlice);
 
-        // console.log(keyPath, options.sliceSelector);
+        const sliceSelector = selectorFromKeyPath(options.keyPath);
+        const nextSlice = sliceSelector(nextState);
+        // console.log('nextSlice', nextSlice);
 
         let nextCtx = {};
         if(nextSlice) {
           nextCtx = mapSliceToProps(nextSlice);
-          // console.log('nextCtx', nextCtx);
         }
 
 
@@ -33,24 +33,19 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
         ownProps = nextOwnProps;
         if (!shallowEqual(result, nextResult)) {
           result = nextResult;
-          console.log('nextResult', nextResult);
+          // console.log('nextResult', nextResult);
         }
         return result;
       };
     }
 
-    const options = {
-      getDisplayName: name => 'Context(' + name + ')',
-      sliceSelector,
-      keyPath
-    };
 
-    const Connect = connectAdvanced(selectorFactory, options)(ReactComponent);
 
-    class Context extends Connect {
+    class Context extends React.Component {
       constructor(props, context) {
         super(props, context);
 
+        this.store = context.store;
         this.mountReducer();
       }
 
@@ -67,9 +62,9 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
         const { store, storeSubscription } = this.context;
 
         return {
+          keyPath: this.getNamespace(),
           store,
-          storeSubscription,
-          keyPath: this.getNamespace()
+          storeSubscription
         }
       }
 
@@ -80,63 +75,23 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
           this.store.mount(namespace, reducer);
         }
       }
+
+      render() {
+        const options = {
+          // getDisplayName: name => 'Context(' + name + ')',
+          keyPath: this.getNamespace()
+        };
+
+        const Connect = connectAdvanced(selectorFactory, options)(ReactComponent);
+        return createElement(Connect, this.props);
+      }
     }
 
     Context.childContextTypes = Context.contextTypes = {
       keyPath: string,
       store: object,
       storeSubscription: object,
-      sliceSelector: func
     };
-
-    return Context;
-
-    /*
-    function Context(props, context) {
-
-      let nextSliceSelector;
-
-      const nextKeyPath = (context.keyPath ? [context.keyPath, keyPath]: [keyPath]).join('.');
-
-      // const nextSliceSelector = (context && context.sliceSelector) ?
-      //   state => sliceSelector(context.sliceSelector(state)):
-      //   state => sliceSelector(state);
-
-
-
-      // if(reducer && nextKeyPath) {
-      //   if(typeof reducer === 'function') {
-      //     console.log('[MOUNT]', nextKeyPath, reducer);
-      //     // context.store.mount(nextKeyPath, reducer);
-      //     context.store.reducerLib.mount(nextKeyPath, reducer);
-      //   }
-      //   else {
-      //     console.error(`Invalid reducer argument in ${keyPath}, expected a Function`);
-      //   }
-      // }
-
-      // console.log(context);
-      if(context && context.sliceSelector) {
-        nextSliceSelector = state => sliceSelector(context.sliceSelector(state));
-      }
-      else {
-        nextSliceSelector = state => sliceSelector(state);
-      }
-
-      const mapStateToProps = state => {
-        console.log('state', state);
-        const slice = nextSliceSelector(state) || {};
-        // console.log('slice', slice);
-        const mapping = mapSliceToProps(slice) || {};
-        // console.log('mapping', mapping);
-        return mapping || {};
-      };
-
-      const Connect = connect(mapStateToProps, mapDispatchToProps)(ReactComponent);
-
-    }
-
-    */
 
     return Context;
   };

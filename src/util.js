@@ -88,9 +88,6 @@ export function mergeDeep(target, source) {
   return output;
 }
 
-
-
-
 export function selectorFromKeyPath(keyPath) {
   if(Array.isArray(keyPath)) {
     const [key, ...path] = keyPath;
