@@ -5,6 +5,14 @@ import { object, string, func } from 'prop-types';
 import { selectorFromKeyPath } from './util';
 import shallowEqual from './utils/shallowEqual';
 
+function proxyActionCreator(keyPath, actionCreator, dispatch) {
+  return function() {
+    const originalAction = actionCreator(...arguments);
+    const action = { ...originalAction, type: `${keyPath}.${originalAction.type}` };
+    dispatch(action)
+  }
+}
+
 function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDispatchToProps) {
   const [keyPath, reducer] = contextFactoryArgs;
 
@@ -28,8 +36,20 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
           nextCtx = mapSliceToProps(nextSlice);
         }
 
+        let actions = {};
+        if(mapDispatchToProps) {
+          if(typeof(mapDispatchToProps) === 'function') {
+            // Can't proxy action types configured with bindActionCreators here.
+            // Consider throwing an error if there's no usable option
+            actions = mapDispatchToProps(dispatch, ownProps);
+          } else if(mapDispatchToProps instanceof Object) {
+            Object.keys(mapDispatchToProps).forEach(key => {
+              actions[key] = proxyActionCreator(options.keyPath, mapDispatchToProps[key], dispatch);
+            });
+          }
+        }
 
-        const nextResult = { ...nextOwnProps, ...nextCtx };
+        const nextResult = { ...nextOwnProps, ...nextCtx, ...actions, dispatch };
         ownProps = nextOwnProps;
         if (!shallowEqual(result, nextResult)) {
           result = nextResult;
