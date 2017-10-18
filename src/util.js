@@ -41,15 +41,12 @@ export function shiftKeyPath(keyPath) {
 
 /**
  * @param {String} keyPath
- * @param {Object} state
  * @param {*} targetValue
  * @returns {Object}
  */
-// scaffold(keyPath, mergeFn)
 export function scaffold(keyPath, targetValue={}) {
   const stateCopy = {};
   const [key, path] = shiftKeyPath(keyPath);
-  // const ctx = stateCopy[key];
 
   if(path.length > 0) {
     stateCopy[key] = scaffold(path, targetValue);
@@ -91,7 +88,7 @@ export function mergeDeep(target, source) {
 export function selectorFromKeyPath(keyPath) {
   if(Array.isArray(keyPath)) {
     const [key, ...path] = keyPath;
-    const selector = state => state[key];
+    const selector = state => state && state[key];
 
     if(path && path.length > 0) {
       return state => selectorFromKeyPath(path)(selector(state));
@@ -104,7 +101,6 @@ export function selectorFromKeyPath(keyPath) {
     }
   }
   else {
-    // console.log(keyPath);
     return selectorFromKeyPath(keyPath.split('.'));
   }
 }

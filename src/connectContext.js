@@ -24,14 +24,10 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
 
       // sourceSelector
       return (nextState, nextOwnProps) => {
-        // console.log(nextOwnProps);
-        // console.log('nextState', nextState);
-
         const sliceSelector = selectorFromKeyPath(options.keyPath);
         const nextSlice = sliceSelector(nextState);
-        // console.log('nextSlice', nextSlice);
 
-        let nextCtx = {};
+        let nextCtx;
         if(nextSlice) {
           nextCtx = mapSliceToProps(nextSlice);
         }
@@ -39,8 +35,8 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
         let actions = {};
         if(mapDispatchToProps) {
           if(typeof(mapDispatchToProps) === 'function') {
-            // Can't proxy action types configured with bindActionCreators here.
-            // Consider throwing an error if there's no usable option
+            // Can't proxy action creators mapped via bindActionCreators here.
+            // This is just for passing down default mapDispatchToProps functionality.
             actions = mapDispatchToProps(dispatch, ownProps);
           } else if(mapDispatchToProps instanceof Object) {
             Object.keys(mapDispatchToProps).forEach(key => {
@@ -53,7 +49,7 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
         ownProps = nextOwnProps;
         if (!shallowEqual(result, nextResult)) {
           result = nextResult;
-          // console.log('nextResult', nextResult);
+          // console.log(ReactComponent.name, nextResult);
         }
         return result;
       };
@@ -98,7 +94,6 @@ function makeConnectContext(contextFactoryArgs, mapSliceToProps=_=>({}), mapDisp
 
       render() {
         const options = {
-          // getDisplayName: name => 'Context(' + name + ')',
           keyPath: this.getNamespace()
         };
 
