@@ -1,4 +1,4 @@
-import { shiftKeyPath } from './util';
+import { makeReducerTree } from './reducer';
 import shallowEqual from './utils/shallowEqual';
 
 function get(keyPath, obj) {
@@ -20,49 +20,9 @@ const wm = new WeakMap();
 
 export default class ReducerMap {
   constructor() {
-    const defaultBoop = {
-      // boop: true
-    };
 
-    function root(state = defaultBoop, action) {
+    function root(state = {}, action) {
 
-      /**
-       *
-       * @param {Function<Function>} reducers
-       * @param {Object} ctx
-       * @param {Object} ctxAction
-       * @returns {Object}
-       */
-      function makeReducerTree(reducers, ctx, ctxAction) {
-        let nextCtx = Object.assign({}, ctx);
-
-        Object.keys(reducers || {}).forEach(key => {
-          // nextCtx[key] = reducers[key](
-          //   ctx[key],
-          //   action
-          // )
-
-          const nextReducers = reducers[key];
-
-          const [, actionPath] = shiftKeyPath(ctxAction.type);
-          const nextAction = { ...ctxAction, type: actionPath };
-
-          nextCtx[key] = nextReducers(
-            ctx[key],
-            nextAction
-          );
-
-          if(key in nextCtx) {
-            const nextReducerKeys = Object.keys(nextReducers);
-            if(nextReducerKeys.length) {
-              nextCtx[key] = makeReducerTree(nextReducers, nextCtx[key], nextAction);
-            }
-          }
-
-        });
-
-        return nextCtx;
-      }
 
       const nextState = makeReducerTree(root, state, action);
 

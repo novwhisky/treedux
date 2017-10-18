@@ -112,3 +112,23 @@ export function makeReducerTree(reducers, ctx, ctxAction) {
 
   return nextCtx;
 }
+
+/**
+ * Same as redux combineReducers, just without the unexpected keys warnings
+ * @param {Object<Function>} reducers
+ * @returns {function(*, *=)}
+ */
+export function combineReducers(reducers) {
+  return (state, action) => {
+    return Object.keys(reducers).reduce(
+      (nextState, key) => {
+        nextState[key] = reducers[key](
+          state[key],
+          action
+        );
+        return nextState;
+      },
+      {}
+    )
+  }
+}
