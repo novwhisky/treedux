@@ -22,10 +22,9 @@ function deriveChildContext(key, path, state, action, recontextActions=true) {
 
 /**
  * @param {Object} children A map of child reducers keyed by their relative store name
- * // @param {Function<Object, Object>} [ownReducer] The reducer for this level's slice of state
  * @returns {function(*=, *=)}
  */
-export function createReducerTreeWithContext(children) { //, ownReducer=_=>_
+export function createReducerTreeWithContext(children) {
   // const initialState = {};
   // const childKeys = Object.keys(children);
 
@@ -87,7 +86,7 @@ export function createReducerTreeWithoutContext(children) {
  * @param {Object} ctxAction
  * @returns {Object}
  */
-export function makeReducerTree(reducers, ctx, ctxAction) {
+export function reduceTree(reducers, ctx, ctxAction) {
   let nextCtx = Object.assign({}, ctx);
 
   Object.keys(reducers || {}).forEach(key => {

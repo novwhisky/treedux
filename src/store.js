@@ -14,8 +14,8 @@ function mount(store, keyPath, reducer) {
 }
 
 export function configureStore(initialState) {
-  let composeEnhancers = function() {};
-  if(window) {
+  let composeEnhancers = compose;
+  if(typeof(window) !== 'undefined') {
     composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
   }
 

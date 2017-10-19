@@ -1,12 +1,18 @@
 /* global describe, it, beforeEach */
 
+////////////////////////////////////////////
+//                                        //
+// THESE ARE BEING REFACTORED, STAY TUNED //
+//                                        //
+////////////////////////////////////////////
+
 import { expect } from 'chai';
 
 import { configureStore } from '../src/store';
 
 import { createReducerTree, struct } from '../src/index';
 
-describe('treedux', function() {
+xdescribe('treedux', function() {
   let initialReducer = (state, action) => state;
   let store;
 
@@ -16,7 +22,7 @@ describe('treedux', function() {
   }
 
   beforeEach(function() {
-    store = configureStore({});
+    store = configureStore();
   });
 
   describe('#createReducerTree()', function() {
