@@ -103,7 +103,7 @@ export function reduceTree(reducers, ctx, ctxAction) {
     if(key in nextCtx) {
       const nextReducerKeys = Object.keys(nextReducers);
       if(nextReducerKeys.length) {
-        nextCtx[key] = makeReducerTree(nextReducers, nextCtx[key], nextAction);
+        nextCtx[key] = reduceTree(nextReducers, nextCtx[key], nextAction);
       }
     }
 
